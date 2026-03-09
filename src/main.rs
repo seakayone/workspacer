@@ -70,17 +70,33 @@ fn main() -> Result<()> {
             }
             _ => {}
         },
-        Commands::Config { workspace_dir } => {
+        Commands::Config {
+            workspace_dir,
+            generate_agents_md,
+        } => {
+            let mut changed = false;
+
             if let Some(dir) = workspace_dir {
                 config.workspace_dir = dir;
-                config.save()?;
+                changed = true;
                 println!(
                     "Updated workspace directory to: {}",
                     config.workspace_dir.display()
                 );
+            }
+
+            if let Some(val) = generate_agents_md {
+                config.generate_agents_md = val;
+                changed = true;
+                println!("Generate AGENTS.md: {val}");
+            }
+
+            if changed {
+                config.save()?;
             } else {
                 println!("Config file: {}", Config::config_file().display());
                 println!("Workspace dir: {}", config.workspace_dir.display());
+                println!("Generate AGENTS.md: {}", config.generate_agents_md);
                 println!(
                     "Templates: {}",
                     if config.templates.is_empty() {

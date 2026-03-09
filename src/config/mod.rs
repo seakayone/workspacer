@@ -15,6 +15,9 @@ pub struct Config {
     pub workspace_dir: PathBuf,
     #[serde(default)]
     pub templates: BTreeMap<String, Template>,
+    /// Generate AGENTS.md (+ CLAUDE.md symlink) in new workspaces.
+    #[serde(default)]
+    pub generate_agents_md: bool,
 }
 
 impl Default for Config {
@@ -24,6 +27,7 @@ impl Default for Config {
                 .expect("could not determine home directory")
                 .join("workspaces"),
             templates: BTreeMap::new(),
+            generate_agents_md: true,
         }
     }
 }

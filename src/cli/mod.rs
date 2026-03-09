@@ -61,6 +61,10 @@ pub enum Commands {
         /// Set the workspace directory
         #[arg(long)]
         workspace_dir: Option<PathBuf>,
+
+        /// Enable or disable AGENTS.md generation in new workspaces
+        #[arg(long)]
+        generate_agents_md: Option<bool>,
     },
 }
 

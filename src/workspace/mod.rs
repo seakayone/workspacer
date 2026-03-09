@@ -4,6 +4,7 @@ use std::process::Command;
 
 use anyhow::{Context, Result};
 
+use crate::agents;
 use crate::config::{Config, Template};
 
 pub fn branch_name(workspace: &str) -> String {
@@ -73,6 +74,10 @@ pub fn create(config: &Config, name: &str, template: &Template) -> Result<PathBu
                 status.code()
             );
         }
+    }
+
+    if config.generate_agents_md {
+        agents::generate(&ws_dir, name, template)?;
     }
 
     eprintln!("Created workspace: {}", ws_dir.display());

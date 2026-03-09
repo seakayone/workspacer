@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use tempfile::TempDir;
 
+use workspacer::agents;
 use workspacer::config::{Config, Template};
 use workspacer::workspace;
 
@@ -11,6 +12,7 @@ fn empty_config(tmp: &TempDir) -> Config {
     Config {
         workspace_dir: tmp.path().to_path_buf(),
         templates: BTreeMap::new(),
+        generate_agents_md: false,
     }
 }
 
@@ -20,6 +22,7 @@ fn config_with_template(tmp: &TempDir, repos: Vec<PathBuf>) -> Config {
     Config {
         workspace_dir: tmp.path().to_path_buf(),
         templates,
+        generate_agents_md: false,
     }
 }
 
@@ -38,6 +41,7 @@ fn list_nonexistent_workspace_dir() {
     let config = Config {
         workspace_dir: "/tmp/workspacer_does_not_exist_12345".into(),
         templates: BTreeMap::new(),
+        generate_agents_md: false,
     };
     let result = workspace::list(&config).unwrap();
     assert!(result.is_empty());
@@ -101,6 +105,7 @@ fn worktree_path_template_uses_workspace_dir() {
     let config = Config {
         workspace_dir: "/my/workspaces".into(),
         templates: BTreeMap::new(),
+        generate_agents_md: false,
     };
     let tmpl = config.worktree_path_template("feature-a");
     assert_eq!(tmpl, "/my/workspaces/feature-a/{{ repo }}");
@@ -146,6 +151,7 @@ fn resolve_template_fails_when_ambiguous() {
     let config = Config {
         workspace_dir: tmp.path().to_path_buf(),
         templates,
+        generate_agents_md: false,
     };
 
     let result = config.resolve_template(None);
@@ -161,4 +167,35 @@ fn resolve_template_fails_for_unknown_name() {
     let result = config.resolve_template(Some("nope"));
     assert!(result.is_err());
     assert!(result.unwrap_err().to_string().contains("not found"));
+}
+
+// --- agents ---
+
+#[test]
+fn generate_agents_md_creates_files() {
+    let tmp = TempDir::new().unwrap();
+    let ws_dir = tmp.path().join("my-feature");
+    fs::create_dir(&ws_dir).unwrap();
+
+    let template = Template {
+        repos: vec!["/path/to/repo-a".into(), "/path/to/repo-b".into()],
+    };
+
+    agents::generate(&ws_dir, "my-feature", &template).unwrap();
+
+    let agents_path = ws_dir.join("AGENTS.md");
+    let claude_path = ws_dir.join("CLAUDE.md");
+
+    assert!(agents_path.exists());
+    assert!(claude_path.is_symlink());
+
+    let content = fs::read_to_string(&agents_path).unwrap();
+    assert!(content.contains("# Workspace: my-feature"));
+    assert!(content.contains("`repo-a/`"));
+    assert!(content.contains("`repo-b/`"));
+    assert!(content.contains("branch `my-feature`"));
+
+    // Symlink should resolve to same content
+    let claude_content = fs::read_to_string(&claude_path).unwrap();
+    assert_eq!(content, claude_content);
 }
