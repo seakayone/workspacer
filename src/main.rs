@@ -12,7 +12,7 @@ fn main() -> Result<()> {
     match cli.command {
         Commands::New { name, template } => {
             let (tmpl_name, tmpl) = config.resolve_template(template.as_deref())?;
-            println!("Using template: {tmpl_name}");
+            eprintln!("Using template: {tmpl_name}");
             let tmpl = tmpl.clone();
             workspace::create(&config, &name, &tmpl)?;
         }
@@ -49,7 +49,7 @@ fn main() -> Result<()> {
         }
         Commands::Remove { name, template } => {
             let (tmpl_name, tmpl) = config.resolve_template(template.as_deref())?;
-            println!("Using template: {tmpl_name}");
+            eprintln!("Using template: {tmpl_name}");
             let tmpl = tmpl.clone();
             workspace::remove(&config, &name, &tmpl)?;
         }

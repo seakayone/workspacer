@@ -31,8 +31,10 @@ if [ -n "$ZSH_VERSION" ]; then
         local -a template_subcmds
         template_subcmds=(
             'list:List all templates'
+            'ls:List all templates'
             'add:Add a new template or add repos to one'
             'remove:Remove a template or repos from one'
+            'rm:Remove a template or repos from one'
             'show:Show details of a template'
         )
 
@@ -92,7 +94,7 @@ if [ -n "$ZSH_VERSION" ]; then
                                         '1:template name:' \
                                         '*'{-r,--repo}'[Repo path]:repo:_directories'
                                     ;;
-                                remove)
+                                remove|rm)
                                     _arguments \
                                         '1:template name:->tmpl' \
                                         '*'{-r,--repo}'[Repo path]:repo:_directories'
@@ -162,12 +164,12 @@ elif [ -n "$BASH_VERSION" ]; then
                 ;;
             template)
                 if [ "$COMP_CWORD" -eq 2 ]; then
-                    COMPREPLY=($(compgen -W "list add remove show" -- "$cur"))
+                    COMPREPLY=($(compgen -W "list ls add remove rm show" -- "$cur"))
                 elif [ "$prev" = "-r" ] || [ "$prev" = "--repo" ]; then
                     COMPREPLY=($(compgen -d -- "$cur"))
                 elif [ "$COMP_CWORD" -eq 3 ]; then
                     case "${COMP_WORDS[2]}" in
-                        show|remove)
+                        show|remove|rm)
                             local templates
                             templates="$(command ws complete templates 2>/dev/null)"
                             COMPREPLY=($(compgen -W "$templates" -- "$cur"))

@@ -67,6 +67,7 @@ pub enum Commands {
 #[derive(Debug, Subcommand)]
 pub enum TemplateCommands {
     /// List all templates
+    #[command(alias = "ls")]
     List,
 
     /// Add a new template or add repos to an existing one
@@ -80,6 +81,7 @@ pub enum TemplateCommands {
     },
 
     /// Remove a template or remove repos from one
+    #[command(alias = "rm")]
     Remove {
         /// Template name
         name: String,

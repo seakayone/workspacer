@@ -94,6 +94,18 @@ fn config_deserializes_without_templates_field() {
     assert!(config.templates.is_empty());
 }
 
+// --- worktree path template ---
+
+#[test]
+fn worktree_path_template_uses_workspace_dir() {
+    let config = Config {
+        workspace_dir: "/my/workspaces".into(),
+        templates: BTreeMap::new(),
+    };
+    let tmpl = config.worktree_path_template();
+    assert_eq!(tmpl, "/my/workspaces/{{ branch | sanitize }}/{{ repo }}");
+}
+
 // --- resolve_template ---
 
 #[test]

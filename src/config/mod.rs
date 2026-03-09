@@ -65,6 +65,13 @@ impl Config {
         Ok(())
     }
 
+    /// Build the WORKTRUNK_WORKTREE_PATH value that places worktrees
+    /// inside workspace_dir/<workspace>/<repo>/
+    pub fn worktree_path_template(&self) -> String {
+        let dir = self.workspace_dir.display();
+        format!("{dir}/{{{{ branch | sanitize }}}}/{{{{ repo }}}}")
+    }
+
     pub fn resolve_template<'a>(&'a self, name: Option<&'a str>) -> Result<(&'a str, &'a Template)> {
         match name {
             Some(n) => {

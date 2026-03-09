@@ -54,6 +54,23 @@ ws remove <name> [-t <template>]  # Remove worktrees via `wt remove` and clean u
 
 If only one template exists, it is used automatically. Otherwise pass `-t <template>`.
 
+### How it works
+
+When creating a workspace, `ws` overrides worktrunk's `worktree-path` via the
+`WORKTRUNK_WORKTREE_PATH` environment variable so that all worktrees are placed
+inside the workspace directory:
+
+```
+<workspace_dir>/<workspace>/<repo>/
+```
+
+This does not change your worktrunk user config.
+
+### Aliases
+
+- `ws ls` = `ws list`
+- `ws rm` = `ws remove`
+
 ### Managing templates
 
 ```
@@ -63,6 +80,8 @@ ws template remove <name>                 # Delete a template
 ws template remove <name> --repo <path>   # Remove specific repos from a template
 ws template show <name>                   # Show repos in a template
 ```
+
+Template subcommands also support `ls` and `rm` aliases.
 
 ### Configuration
 
@@ -75,5 +94,5 @@ Config is stored at `~/.config/workspacer/config.json`.
 
 | Key             | Default          | Description                                  |
 |-----------------|------------------|----------------------------------------------|
-| `workspace_dir` | `~/workspaces`   | Directory where workspaces live              |
+| `workspace_dir` | `~/workspaces`   | Directory where workspaces are created       |
 | `templates`     | `{}`             | Named sets of repo paths for worktree creation |

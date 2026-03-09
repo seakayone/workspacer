@@ -32,15 +32,20 @@ pub fn list(config: &Config) -> Result<Vec<String>> {
     Ok(workspaces)
 }
 
+fn wt_command(config: &Config) -> Command {
+    let mut cmd = Command::new("wt");
+    cmd.env("WORKTRUNK_DIRECTIVE_FILE", "/dev/null")
+        .env("WORKTRUNK_WORKTREE_PATH", config.worktree_path_template());
+    cmd
+}
+
 pub fn create(config: &Config, name: &str, template: &Template) -> Result<PathBuf> {
     let ws_dir = workspace_dir(config).join(name);
-    fs::create_dir_all(&ws_dir)
-        .with_context(|| format!("failed to create workspace dir {}", ws_dir.display()))?;
 
     for repo in &template.repos {
-        println!("Creating worktree for {} ...", repo.display());
-        let status = Command::new("wt")
-            .args(["switch", "--create", name])
+        eprintln!("Creating worktree for {} ...", repo.display());
+        let status = wt_command(config)
+            .args(["switch", "--create", "--no-cd", name])
             .arg("-C")
             .arg(repo)
             .status()
@@ -62,14 +67,14 @@ pub fn create(config: &Config, name: &str, template: &Template) -> Result<PathBu
         }
     }
 
-    println!("Created workspace: {}", ws_dir.display());
+    eprintln!("Created workspace: {}", ws_dir.display());
     Ok(ws_dir)
 }
 
 pub fn remove(config: &Config, name: &str, template: &Template) -> Result<()> {
     for repo in &template.repos {
-        println!("Removing worktree for {} ...", repo.display());
-        let status = Command::new("wt")
+        eprintln!("Removing worktree for {} ...", repo.display());
+        let status = wt_command(config)
             .args(["remove", name])
             .arg("-C")
             .arg(repo)
@@ -98,6 +103,6 @@ pub fn remove(config: &Config, name: &str, template: &Template) -> Result<()> {
             .with_context(|| format!("failed to remove workspace dir {}", dir.display()))?;
     }
 
-    println!("Removed workspace: {name}");
+    eprintln!("Removed workspace: {name}");
     Ok(())
 }
