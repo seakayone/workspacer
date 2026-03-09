@@ -102,8 +102,8 @@ fn worktree_path_template_uses_workspace_dir() {
         workspace_dir: "/my/workspaces".into(),
         templates: BTreeMap::new(),
     };
-    let tmpl = config.worktree_path_template();
-    assert_eq!(tmpl, "/my/workspaces/{{ branch | sanitize }}/{{ repo }}");
+    let tmpl = config.worktree_path_template("feature-a");
+    assert_eq!(tmpl, "/my/workspaces/feature-a/{{ repo }}");
 }
 
 // --- resolve_template ---

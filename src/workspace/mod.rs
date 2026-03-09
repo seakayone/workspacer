@@ -6,6 +6,10 @@ use anyhow::{Context, Result};
 
 use crate::config::{Config, Template};
 
+pub fn branch_name(workspace: &str) -> String {
+    workspace.to_string()
+}
+
 pub fn workspace_dir(config: &Config) -> PathBuf {
     config.workspace_dir.clone()
 }
@@ -32,27 +36,31 @@ pub fn list(config: &Config) -> Result<Vec<String>> {
     Ok(workspaces)
 }
 
-fn wt_command(config: &Config) -> Command {
+fn wt_command(config: &Config, workspace: &str) -> Command {
     let mut cmd = Command::new("wt");
     cmd.env("WORKTRUNK_DIRECTIVE_FILE", "/dev/null")
-        .env("WORKTRUNK_WORKTREE_PATH", config.worktree_path_template());
+        .env(
+            "WORKTRUNK_WORKTREE_PATH",
+            config.worktree_path_template(workspace),
+        );
     cmd
 }
 
 pub fn create(config: &Config, name: &str, template: &Template) -> Result<PathBuf> {
+    let branch = branch_name(name);
     let ws_dir = workspace_dir(config).join(name);
 
     for repo in &template.repos {
         eprintln!("Creating worktree for {} ...", repo.display());
-        let status = wt_command(config)
-            .args(["switch", "--create", "--no-cd", name])
+        let status = wt_command(config, name)
+            .args(["switch", "--create", "--no-cd", &branch])
             .arg("-C")
             .arg(repo)
             .status()
             .with_context(|| {
                 format!(
                     "failed to run `wt switch --create {}` in {}",
-                    name,
+                    branch,
                     repo.display()
                 )
             })?;
@@ -60,7 +68,7 @@ pub fn create(config: &Config, name: &str, template: &Template) -> Result<PathBu
         if !status.success() {
             anyhow::bail!(
                 "wt switch --create {} failed in {} (exit code: {:?})",
-                name,
+                branch,
                 repo.display(),
                 status.code()
             );
@@ -72,17 +80,18 @@ pub fn create(config: &Config, name: &str, template: &Template) -> Result<PathBu
 }
 
 pub fn remove(config: &Config, name: &str, template: &Template) -> Result<()> {
+    let branch = branch_name(name);
     for repo in &template.repos {
         eprintln!("Removing worktree for {} ...", repo.display());
-        let status = wt_command(config)
-            .args(["remove", name])
+        let status = wt_command(config, name)
+            .args(["remove", &branch])
             .arg("-C")
             .arg(repo)
             .status()
             .with_context(|| {
                 format!(
                     "failed to run `wt remove {}` in {}",
-                    name,
+                    branch,
                     repo.display()
                 )
             })?;
@@ -90,7 +99,7 @@ pub fn remove(config: &Config, name: &str, template: &Template) -> Result<()> {
         if !status.success() {
             eprintln!(
                 "warning: wt remove {} failed in {} (exit code: {:?})",
-                name,
+                branch,
                 repo.display(),
                 status.code()
             );
