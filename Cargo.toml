@@ -1,0 +1,19 @@
+[package]
+name = "workspacer"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "ws"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0.102"
+clap = { version = "4.5.60", features = ["derive"] }
+crossterm = "0.29.0"
+dirs = "6.0.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+
+[dev-dependencies]
+tempfile = "3.26.0"
