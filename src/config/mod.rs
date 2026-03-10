@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Template {
     pub repos: Vec<PathBuf>,
@@ -16,8 +17,12 @@ pub struct Config {
     #[serde(default)]
     pub templates: BTreeMap<String, Template>,
     /// Generate AGENTS.md (+ CLAUDE.md symlink) in new workspaces.
-    #[serde(default)]
+    #[serde(default = "default_true")]
     pub generate_agents_md: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 impl Default for Config {
@@ -41,11 +46,12 @@ impl Config {
     }
 
     pub fn config_file() -> PathBuf {
-        Self::config_dir().join("config.json")
+        Self::config_dir().join("config.toml")
     }
 
     pub fn load() -> Result<Self> {
         let path = Self::config_file();
+
         if !path.exists() {
             let config = Self::default();
             config.save()?;
@@ -53,7 +59,7 @@ impl Config {
         }
         let contents = fs::read_to_string(&path)
             .with_context(|| format!("failed to read config from {}", path.display()))?;
-        let config: Config = serde_json::from_str(&contents)
+        let config: Config = toml::from_str(&contents)
             .with_context(|| format!("failed to parse config from {}", path.display()))?;
         Ok(config)
     }
@@ -63,7 +69,8 @@ impl Config {
         fs::create_dir_all(&dir)
             .with_context(|| format!("failed to create config dir {}", dir.display()))?;
         let path = Self::config_file();
-        let contents = serde_json::to_string_pretty(self)?;
+        let contents =
+            toml::to_string_pretty(self).context("failed to serialize config as TOML")?;
         fs::write(&path, contents)
             .with_context(|| format!("failed to write config to {}", path.display()))?;
         Ok(())

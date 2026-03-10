@@ -82,8 +82,8 @@ fn config_serialization_roundtrip() {
         vec!["/repo/one".into(), "/repo/two".into()],
     );
 
-    let json = serde_json::to_string_pretty(&config).unwrap();
-    let loaded: Config = serde_json::from_str(&json).unwrap();
+    let toml_str = toml::to_string_pretty(&config).unwrap();
+    let loaded: Config = toml::from_str(&toml_str).unwrap();
 
     assert_eq!(loaded.templates.len(), 1);
     let tmpl = loaded.templates.get("default").unwrap();
@@ -93,8 +93,8 @@ fn config_serialization_roundtrip() {
 
 #[test]
 fn config_deserializes_without_templates_field() {
-    let json = r#"{ "workspace_dir": "/some/path" }"#;
-    let config: Config = serde_json::from_str(json).unwrap();
+    let toml_str = r#"workspace_dir = "/some/path""#;
+    let config: Config = toml::from_str(toml_str).unwrap();
     assert!(config.templates.is_empty());
 }
 
