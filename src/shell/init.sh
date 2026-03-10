@@ -17,7 +17,7 @@ if [ -n "$ZSH_VERSION" ]; then
     _ws() {
         local -a subcmds
         subcmds=(
-            'add:Add a repo worktree to an existing workspace'
+            'repo:Manage repos in a workspace'
             'new:Create a new workspace'
             'switch:Switch to an existing workspace'
             'list:List all workspaces'
@@ -27,6 +27,13 @@ if [ -n "$ZSH_VERSION" ]; then
             'template:Manage templates'
             'config:Show or update configuration'
             'shell-init:Print shell integration'
+        )
+
+        local -a repo_subcmds
+        repo_subcmds=(
+            'add:Add a repo worktree to the current workspace'
+            'remove:Remove a repo worktree from the current workspace'
+            'rm:Remove a repo worktree from the current workspace'
         )
 
         local -a template_subcmds
@@ -49,8 +56,23 @@ if [ -n "$ZSH_VERSION" ]; then
                 ;;
             args)
                 case "${words[1]}" in
-                    add)
-                        _arguments '1:repo:_files -/'
+                    repo)
+                        if (( CURRENT == 2 )); then
+                            _describe 'repo command' repo_subcmds
+                        else
+                            case "${words[2]}" in
+                                add)
+                                    _arguments '1:repo:_files -/'
+                                    ;;
+                                remove|rm)
+                                    if (( CURRENT == 3 )); then
+                                        local -a repos
+                                        repos=(${(f)"$(command ws complete repos 2>/dev/null)"})
+                                        _describe 'repo' repos
+                                    fi
+                                    ;;
+                            esac
+                        fi
                         ;;
                     switch)
                         if (( CURRENT == 2 )); then
@@ -133,7 +155,7 @@ elif [ -n "$BASH_VERSION" ]; then
         COMPREPLY=()
         cur="${COMP_WORDS[COMP_CWORD]}"
         prev="${COMP_WORDS[COMP_CWORD-1]}"
-        subcmds="add new switch list ls remove rm template config shell-init"
+        subcmds="repo new switch list ls remove rm template config shell-init"
 
         if [ "$COMP_CWORD" -eq 1 ]; then
             COMPREPLY=($(compgen -W "$subcmds" -- "$cur"))
@@ -141,10 +163,21 @@ elif [ -n "$BASH_VERSION" ]; then
         fi
 
         case "${COMP_WORDS[1]}" in
-            add)
+            repo)
                 if [ "$COMP_CWORD" -eq 2 ]; then
-                    compopt -o dirnames
-                    COMPREPLY=($(compgen -d -- "$cur"))
+                    COMPREPLY=($(compgen -W "add remove rm" -- "$cur"))
+                elif [ "$COMP_CWORD" -eq 3 ]; then
+                    case "${COMP_WORDS[2]}" in
+                        add)
+                            compopt -o dirnames
+                            COMPREPLY=($(compgen -d -- "$cur"))
+                            ;;
+                        remove|rm)
+                            local repos
+                            repos="$(command ws complete repos 2>/dev/null)"
+                            COMPREPLY=($(compgen -W "$repos" -- "$cur"))
+                            ;;
+                    esac
                 fi
                 ;;
             switch)

@@ -21,11 +21,9 @@ pub enum Commands {
         template: Option<String>,
     },
 
-    /// Add a repo worktree to the current workspace
-    Add {
-        /// Path to the repo to add
-        repo: PathBuf,
-    },
+    /// Manage repos in a workspace
+    #[command(subcommand)]
+    Repo(RepoCommands),
 
     /// Switch to an existing workspace
     Switch {
@@ -108,6 +106,22 @@ pub enum TemplateCommands {
     /// Show details of a template
     Show {
         /// Template name
+        name: String,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum RepoCommands {
+    /// Add a repo worktree to the current workspace
+    Add {
+        /// Path to the repo to add
+        repo: PathBuf,
+    },
+
+    /// Remove a repo worktree from the current workspace
+    #[command(alias = "rm")]
+    Remove {
+        /// Name of the repo directory to remove
         name: String,
     },
 }

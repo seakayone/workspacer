@@ -135,6 +135,80 @@ pub fn add_repo(config: &Config, name: &str, repo: &std::path::Path) -> Result<(
     Ok(())
 }
 
+/// List repo directories inside a workspace.
+pub fn list_repos(config: &Config, workspace: &str) -> Result<Vec<String>> {
+    let ws_dir = workspace_dir(config).join(workspace);
+    if !ws_dir.exists() {
+        anyhow::bail!("workspace '{}' does not exist", workspace);
+    }
+    let mut repos = Vec::new();
+    for entry in
+        fs::read_dir(&ws_dir).with_context(|| format!("failed to read {}", ws_dir.display()))?
+    {
+        let entry = entry?;
+        if entry.file_type()?.is_dir() {
+            if let Some(name) = entry.file_name().to_str() {
+                if !name.starts_with('.') {
+                    repos.push(name.to_string());
+                }
+            }
+        }
+    }
+    repos.sort();
+    Ok(repos)
+}
+
+/// Remove a single repo worktree from a workspace.
+pub fn remove_repo(config: &Config, workspace: &str, repo_name: &str) -> Result<()> {
+    let branch = branch_name(workspace);
+    let ws_dir = workspace_dir(config).join(workspace);
+    let repo_dir = ws_dir.join(repo_name);
+
+    if !repo_dir.exists() {
+        anyhow::bail!(
+            "repo '{}' not found in workspace '{}'",
+            repo_name,
+            workspace
+        );
+    }
+
+    eprintln!("Removing worktree for {repo_name} from workspace {workspace} ...");
+    let status = wt_command(config, workspace)
+        .args(["remove", &branch])
+        .arg("-C")
+        .arg(&repo_dir)
+        .status()
+        .with_context(|| {
+            format!(
+                "failed to run `wt remove {}` in {}",
+                branch,
+                repo_dir.display()
+            )
+        })?;
+
+    if !status.success() {
+        eprintln!(
+            "warning: wt remove {} failed in {} (exit code: {:?})",
+            branch,
+            repo_dir.display(),
+            status.code()
+        );
+    }
+
+    // Remove the directory if it still exists
+    if repo_dir.exists() {
+        fs::remove_dir_all(&repo_dir)
+            .with_context(|| format!("failed to remove {}", repo_dir.display()))?;
+    }
+
+    if config.generate_claude_config {
+        agents::remove_repo(&ws_dir, repo_name)?;
+    }
+
+    eprintln!("Removed {repo_name} from workspace {workspace}");
+    Ok(())
+}
+
 const AGENT_MARKER_FILE: &str = "agent-marker";
 const CONFIG_DIR: &str = ".config/workspacer";
 

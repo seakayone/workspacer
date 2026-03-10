@@ -1,0 +1,13 @@
+{
+  "name": "workspacer",
+  "owner": {
+    "name": "workspacer"
+  },
+  "plugins": [
+    {
+      "name": "workspacer",
+      "source": "./",
+      "description": "Automatic agent activity tracking for workspacer workspaces"
+    }
+  ]
+}

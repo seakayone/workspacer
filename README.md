@@ -50,6 +50,8 @@ ws new <name> [-t <template>]     # Create worktrees via `wt switch --create`
 ws switch [name]                  # Switch to a workspace (TUI picker if name omitted)
 ws list                           # List all workspaces
 ws remove <name> [-t <template>]  # Remove worktrees via `wt remove` and clean up
+ws repo add <path>                # Add a repo worktree to the current workspace
+ws repo remove <name>             # Remove a repo worktree from the current workspace
 ```
 
 If only one template exists, it is used automatically. Otherwise pass `-t <template>`.
@@ -66,10 +68,20 @@ inside the workspace directory:
 
 This does not change your worktrunk user config.
 
+### Managing repos in a workspace
+
+```
+ws repo add <path>      # Add a repo worktree (must be inside a workspace)
+ws repo remove <name>   # Remove a repo by its directory name in the workspace
+```
+
+`ws repo remove` supports tab-completion of repo names in the current workspace.
+
 ### Aliases
 
 - `ws ls` = `ws list`
 - `ws rm` = `ws remove`
+- `ws repo rm` = `ws repo remove`
 
 ### Managing templates
 
@@ -102,10 +114,14 @@ Config is stored at `~/.config/workspacer/config.json`.
 Workspacer ships with a Claude Code plugin that tracks agent activity per workspace.
 When active, `ws list` shows 🤖 (working) or 💬 (waiting for input) next to each workspace.
 
-Install the plugin for development/testing:
+Install the plugin:
 
 ```sh
-claude --plugin-dir /path/to/workspacer
+# Add the local repo as a marketplace
+claude plugin marketplace add /path/to/workspacer
+
+# Install the plugin from that marketplace
+claude plugin install workspacer@workspacer
 ```
 
 The plugin uses Claude Code hooks to automatically set and clear the agent state:

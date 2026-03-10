@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 
-use workspacer::cli::{AgentCommands, Cli, Commands, TemplateCommands};
+use workspacer::cli::{AgentCommands, Cli, Commands, RepoCommands, TemplateCommands};
 use workspacer::config::{Config, Template};
 use workspacer::{tui, workspace};
 
@@ -10,10 +10,17 @@ fn main() -> Result<()> {
     let mut config = Config::load()?;
 
     match cli.command {
-        Commands::Add { repo } => {
+        Commands::Repo(cmd) => {
             let cwd = std::env::current_dir().context("failed to get current directory")?;
             let ws_name = workspace::detect_workspace(&config, &cwd)?;
-            workspace::add_repo(&config, &ws_name, &repo)?;
+            match cmd {
+                RepoCommands::Add { repo } => {
+                    workspace::add_repo(&config, &ws_name, &repo)?;
+                }
+                RepoCommands::Remove { name } => {
+                    workspace::remove_repo(&config, &ws_name, &name)?;
+                }
+            }
         }
         Commands::New { name, template } => {
             let (tmpl_name, tmpl) = config.resolve_template(template.as_deref())?;
@@ -93,6 +100,14 @@ fn main() -> Result<()> {
             "templates" => {
                 for name in config.templates.keys() {
                     println!("{name}");
+                }
+            }
+            "repos" => {
+                let cwd = std::env::current_dir().context("failed to get current directory")?;
+                if let Ok(ws_name) = workspace::detect_workspace(&config, &cwd) {
+                    for repo in workspace::list_repos(&config, &ws_name)? {
+                        println!("{repo}");
+                    }
                 }
             }
             _ => {}

@@ -243,3 +243,105 @@ fn generate_claude_config_creates_files() {
     assert!(dirs[0].as_str().unwrap().ends_with("/repo-a"));
     assert!(dirs[1].as_str().unwrap().ends_with("/repo-b"));
 }
+
+// --- list_repos ---
+
+#[test]
+fn list_repos_returns_sorted_directories() {
+    let tmp = TempDir::new().unwrap();
+    let config = empty_config(&tmp);
+    let ws_dir = tmp.path().join("my-ws");
+    fs::create_dir(&ws_dir).unwrap();
+    fs::create_dir(ws_dir.join("repo-c")).unwrap();
+    fs::create_dir(ws_dir.join("repo-a")).unwrap();
+    fs::create_dir(ws_dir.join("repo-b")).unwrap();
+    // hidden dirs should be excluded
+    fs::create_dir(ws_dir.join(".config")).unwrap();
+
+    let repos = workspace::list_repos(&config, "my-ws").unwrap();
+    assert_eq!(repos, vec!["repo-a", "repo-b", "repo-c"]);
+}
+
+#[test]
+fn list_repos_fails_for_nonexistent_workspace() {
+    let tmp = TempDir::new().unwrap();
+    let config = empty_config(&tmp);
+
+    let result = workspace::list_repos(&config, "nonexistent");
+    assert!(result.is_err());
+    assert!(result.unwrap_err().to_string().contains("does not exist"));
+}
+
+#[test]
+fn list_repos_empty_workspace() {
+    let tmp = TempDir::new().unwrap();
+    let config = empty_config(&tmp);
+    let ws_dir = tmp.path().join("empty-ws");
+    fs::create_dir(&ws_dir).unwrap();
+
+    let repos = workspace::list_repos(&config, "empty-ws").unwrap();
+    assert!(repos.is_empty());
+}
+
+// --- remove_repo (agents) ---
+
+#[test]
+fn remove_repo_updates_agents_md() {
+    let tmp = TempDir::new().unwrap();
+    let ws_dir = tmp.path().join("my-feature");
+    fs::create_dir(&ws_dir).unwrap();
+
+    let template = Template {
+        repos: vec!["/path/to/repo-a".into(), "/path/to/repo-b".into()],
+    };
+    agents::generate(&ws_dir, "my-feature", &template).unwrap();
+
+    // Verify both repos are in AGENTS.md
+    let content = fs::read_to_string(ws_dir.join("AGENTS.md")).unwrap();
+    assert!(content.contains("`repo-a/`"));
+    assert!(content.contains("`repo-b/`"));
+
+    // Remove repo-a
+    agents::remove_repo(&ws_dir, "repo-a").unwrap();
+
+    let content = fs::read_to_string(ws_dir.join("AGENTS.md")).unwrap();
+    assert!(!content.contains("`repo-a/`"));
+    assert!(content.contains("`repo-b/`"));
+}
+
+#[test]
+fn remove_repo_updates_claude_settings() {
+    let tmp = TempDir::new().unwrap();
+    let ws_dir = tmp.path().join("my-feature");
+    fs::create_dir(&ws_dir).unwrap();
+
+    let template = Template {
+        repos: vec!["/path/to/repo-a".into(), "/path/to/repo-b".into()],
+    };
+    agents::generate(&ws_dir, "my-feature", &template).unwrap();
+
+    // Verify both repos in settings
+    let settings_path = ws_dir.join(".claude/settings.local.json");
+    let settings: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&settings_path).unwrap()).unwrap();
+    assert_eq!(settings["additionalDirectories"].as_array().unwrap().len(), 2);
+
+    // Remove repo-a
+    agents::remove_repo(&ws_dir, "repo-a").unwrap();
+
+    let settings: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&settings_path).unwrap()).unwrap();
+    let dirs = settings["additionalDirectories"].as_array().unwrap();
+    assert_eq!(dirs.len(), 1);
+    assert!(dirs[0].as_str().unwrap().ends_with("/repo-b"));
+}
+
+#[test]
+fn remove_repo_noop_when_no_agents_md() {
+    let tmp = TempDir::new().unwrap();
+    let ws_dir = tmp.path().join("my-feature");
+    fs::create_dir(&ws_dir).unwrap();
+
+    // Should not error when no AGENTS.md exists
+    agents::remove_repo(&ws_dir, "repo-a").unwrap();
+}

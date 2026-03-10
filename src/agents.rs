@@ -124,6 +124,57 @@ pub fn add_repo(workspace_dir: &Path, repo: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Remove a repo entry from AGENTS.md and .claude/settings.local.json.
+pub fn remove_repo(workspace_dir: &Path, repo_name: &str) -> Result<()> {
+    let agents_path = workspace_dir.join("AGENTS.md");
+    if agents_path.exists() {
+        let content = fs::read_to_string(&agents_path)
+            .with_context(|| format!("failed to read {}", agents_path.display()))?;
+        let marker = format!("`{repo_name}/`");
+        let new_content: String = content
+            .lines()
+            .filter(|line| !line.contains(&marker))
+            .collect::<Vec<_>>()
+            .join("\n");
+        // Preserve trailing newline
+        let new_content = if content.ends_with('\n') {
+            format!("{new_content}\n")
+        } else {
+            new_content
+        };
+        fs::write(&agents_path, &new_content)
+            .with_context(|| format!("failed to write {}", agents_path.display()))?;
+        eprintln!("Updated AGENTS.md: removed {repo_name}");
+    }
+
+    remove_repo_from_claude_settings(workspace_dir, repo_name)?;
+
+    Ok(())
+}
+
+fn remove_repo_from_claude_settings(workspace_dir: &Path, repo_name: &str) -> Result<()> {
+    let settings_path = workspace_dir.join(".claude/settings.local.json");
+    if !settings_path.exists() {
+        return Ok(());
+    }
+
+    let contents = fs::read_to_string(&settings_path)
+        .with_context(|| format!("failed to read {}", settings_path.display()))?;
+    let mut settings: ClaudeSettings = serde_json::from_str(&contents)
+        .with_context(|| format!("failed to parse {}", settings_path.display()))?;
+
+    let repo_dir = workspace_dir.join(repo_name);
+    settings.additional_directories.retain(|d| d != &repo_dir);
+
+    let contents = serde_json::to_string_pretty(&settings)
+        .context("failed to serialize Claude settings")?;
+    fs::write(&settings_path, contents)
+        .with_context(|| format!("failed to write {}", settings_path.display()))?;
+
+    eprintln!("Updated .claude/settings.local.json: removed {repo_name}");
+    Ok(())
+}
+
 fn add_repo_to_claude_settings(workspace_dir: &Path, repo: &Path) -> Result<()> {
     let claude_dir = workspace_dir.join(".claude");
     let settings_path = claude_dir.join("settings.local.json");
