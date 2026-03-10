@@ -169,6 +169,40 @@ fn resolve_template_fails_for_unknown_name() {
     assert!(result.unwrap_err().to_string().contains("not found"));
 }
 
+// --- detect_workspace ---
+
+#[test]
+fn detect_workspace_from_workspace_root() {
+    let tmp = TempDir::new().unwrap();
+    let config = empty_config(&tmp);
+    let ws_dir = tmp.path().join("my-feature");
+    fs::create_dir(&ws_dir).unwrap();
+
+    let name = workspace::detect_workspace(&config, &ws_dir).unwrap();
+    assert_eq!(name, "my-feature");
+}
+
+#[test]
+fn detect_workspace_from_subdirectory() {
+    let tmp = TempDir::new().unwrap();
+    let config = empty_config(&tmp);
+    let sub_dir = tmp.path().join("my-feature").join("repo-a");
+    fs::create_dir_all(&sub_dir).unwrap();
+
+    let name = workspace::detect_workspace(&config, &sub_dir).unwrap();
+    assert_eq!(name, "my-feature");
+}
+
+#[test]
+fn detect_workspace_fails_outside_workspace_dir() {
+    let tmp = TempDir::new().unwrap();
+    let config = empty_config(&tmp);
+    let outside = PathBuf::from("/tmp");
+
+    let result = workspace::detect_workspace(&config, &outside);
+    assert!(result.is_err());
+}
+
 // --- agents ---
 
 #[test]

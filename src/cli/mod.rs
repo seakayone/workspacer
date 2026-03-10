@@ -40,8 +40,8 @@ pub enum Commands {
     /// Remove a workspace and its worktrees
     #[command(alias = "rm")]
     Remove {
-        /// Name of the workspace to remove
-        name: String,
+        /// Name of the workspace to remove (detected from current directory if omitted)
+        name: Option<String>,
 
         /// Template to use for worktree cleanup (auto-selected if only one exists)
         #[arg(short, long)]

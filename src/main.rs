@@ -53,6 +53,13 @@ fn main() -> Result<()> {
             }
         }
         Commands::Remove { name, template } => {
+            let name = match name {
+                Some(n) => n,
+                None => {
+                    let cwd = std::env::current_dir().context("failed to get current directory")?;
+                    workspace::detect_workspace(&config, &cwd)?
+                }
+            };
             let (tmpl_name, tmpl) = config.resolve_template(template.as_deref())?;
             eprintln!("Using template: {tmpl_name}");
             let tmpl = tmpl.clone();
