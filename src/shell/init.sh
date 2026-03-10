@@ -17,6 +17,7 @@ if [ -n "$ZSH_VERSION" ]; then
     _ws() {
         local -a subcmds
         subcmds=(
+            'add:Add a repo worktree to an existing workspace'
             'new:Create a new workspace'
             'switch:Switch to an existing workspace'
             'list:List all workspaces'
@@ -48,6 +49,9 @@ if [ -n "$ZSH_VERSION" ]; then
                 ;;
             args)
                 case "${words[1]}" in
+                    add)
+                        _arguments '1:repo:_files -/'
+                        ;;
                     switch)
                         if (( CURRENT == 2 )); then
                             local -a workspaces
@@ -92,12 +96,12 @@ if [ -n "$ZSH_VERSION" ]; then
                                 add)
                                     _arguments \
                                         '1:template name:' \
-                                        '*'{-r,--repo}'[Repo path]:repo:_directories'
+                                        '*'{-r,--repo}'[Repo path]:repo:_files -/'
                                     ;;
                                 remove|rm)
                                     _arguments \
                                         '1:template name:->tmpl' \
-                                        '*'{-r,--repo}'[Repo path]:repo:_directories'
+                                        '*'{-r,--repo}'[Repo path]:repo:_files -/'
                                     if [ "$state" = "tmpl" ]; then
                                         local -a templates
                                         templates=(${(f)"$(command ws complete templates 2>/dev/null)"})
@@ -129,7 +133,7 @@ elif [ -n "$BASH_VERSION" ]; then
         COMPREPLY=()
         cur="${COMP_WORDS[COMP_CWORD]}"
         prev="${COMP_WORDS[COMP_CWORD-1]}"
-        subcmds="new switch list ls remove rm template config shell-init"
+        subcmds="add new switch list ls remove rm template config shell-init"
 
         if [ "$COMP_CWORD" -eq 1 ]; then
             COMPREPLY=($(compgen -W "$subcmds" -- "$cur"))
@@ -137,6 +141,12 @@ elif [ -n "$BASH_VERSION" ]; then
         fi
 
         case "${COMP_WORDS[1]}" in
+            add)
+                if [ "$COMP_CWORD" -eq 2 ]; then
+                    compopt -o dirnames
+                    COMPREPLY=($(compgen -d -- "$cur"))
+                fi
+                ;;
             switch)
                 if [ "$COMP_CWORD" -eq 2 ]; then
                     local workspaces
@@ -166,6 +176,7 @@ elif [ -n "$BASH_VERSION" ]; then
                 if [ "$COMP_CWORD" -eq 2 ]; then
                     COMPREPLY=($(compgen -W "list ls add remove rm show" -- "$cur"))
                 elif [ "$prev" = "-r" ] || [ "$prev" = "--repo" ]; then
+                    compopt -o dirnames
                     COMPREPLY=($(compgen -d -- "$cur"))
                 elif [ "$COMP_CWORD" -eq 3 ]; then
                     case "${COMP_WORDS[2]}" in

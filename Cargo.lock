@@ -902,6 +902,7 @@ dependencies = [
  "crossterm",
  "dirs",
  "serde",
+ "serde_json",
  "tempfile",
  "toml",
 ]

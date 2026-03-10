@@ -10,6 +10,11 @@ fn main() -> Result<()> {
     let mut config = Config::load()?;
 
     match cli.command {
+        Commands::Add { repo } => {
+            let cwd = std::env::current_dir().context("failed to get current directory")?;
+            let ws_name = workspace::detect_workspace(&config, &cwd)?;
+            workspace::add_repo(&config, &ws_name, &repo)?;
+        }
         Commands::New { name, template } => {
             let (tmpl_name, tmpl) = config.resolve_template(template.as_deref())?;
             eprintln!("Using template: {tmpl_name}");
@@ -72,7 +77,7 @@ fn main() -> Result<()> {
         },
         Commands::Config {
             workspace_dir,
-            generate_agents_md,
+            generate_claude_config,
         } => {
             let mut changed = false;
 
@@ -85,10 +90,10 @@ fn main() -> Result<()> {
                 );
             }
 
-            if let Some(val) = generate_agents_md {
-                config.generate_agents_md = val;
+            if let Some(val) = generate_claude_config {
+                config.generate_claude_config = val;
                 changed = true;
-                println!("Generate AGENTS.md: {val}");
+                println!("Generate Claude config: {val}");
             }
 
             if changed {
@@ -96,7 +101,7 @@ fn main() -> Result<()> {
             } else {
                 println!("Config file: {}", Config::config_file().display());
                 println!("Workspace dir: {}", config.workspace_dir.display());
-                println!("Generate AGENTS.md: {}", config.generate_agents_md);
+                println!("Generate Claude config: {}", config.generate_claude_config);
                 println!(
                     "Templates: {}",
                     if config.templates.is_empty() {

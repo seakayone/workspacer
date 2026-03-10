@@ -21,6 +21,12 @@ pub enum Commands {
         template: Option<String>,
     },
 
+    /// Add a repo worktree to the current workspace
+    Add {
+        /// Path to the repo to add
+        repo: PathBuf,
+    },
+
     /// Switch to an existing workspace
     Switch {
         /// Name of the workspace to switch to (opens TUI picker if omitted)
@@ -62,9 +68,9 @@ pub enum Commands {
         #[arg(long)]
         workspace_dir: Option<PathBuf>,
 
-        /// Enable or disable AGENTS.md generation in new workspaces
+        /// Enable or disable Claude config generation in new workspaces
         #[arg(long)]
-        generate_agents_md: Option<bool>,
+        generate_claude_config: Option<bool>,
     },
 }
 

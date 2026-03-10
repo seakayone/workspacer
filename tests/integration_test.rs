@@ -12,7 +12,7 @@ fn empty_config(tmp: &TempDir) -> Config {
     Config {
         workspace_dir: tmp.path().to_path_buf(),
         templates: BTreeMap::new(),
-        generate_agents_md: false,
+        generate_claude_config: false,
     }
 }
 
@@ -22,7 +22,7 @@ fn config_with_template(tmp: &TempDir, repos: Vec<PathBuf>) -> Config {
     Config {
         workspace_dir: tmp.path().to_path_buf(),
         templates,
-        generate_agents_md: false,
+        generate_claude_config: false,
     }
 }
 
@@ -41,7 +41,7 @@ fn list_nonexistent_workspace_dir() {
     let config = Config {
         workspace_dir: "/tmp/workspacer_does_not_exist_12345".into(),
         templates: BTreeMap::new(),
-        generate_agents_md: false,
+        generate_claude_config: false,
     };
     let result = workspace::list(&config).unwrap();
     assert!(result.is_empty());
@@ -105,7 +105,7 @@ fn worktree_path_template_uses_workspace_dir() {
     let config = Config {
         workspace_dir: "/my/workspaces".into(),
         templates: BTreeMap::new(),
-        generate_agents_md: false,
+        generate_claude_config: false,
     };
     let tmpl = config.worktree_path_template("feature-a");
     assert_eq!(tmpl, "/my/workspaces/feature-a/{{ repo }}");
@@ -151,7 +151,7 @@ fn resolve_template_fails_when_ambiguous() {
     let config = Config {
         workspace_dir: tmp.path().to_path_buf(),
         templates,
-        generate_agents_md: false,
+        generate_claude_config: false,
     };
 
     let result = config.resolve_template(None);
@@ -172,7 +172,7 @@ fn resolve_template_fails_for_unknown_name() {
 // --- agents ---
 
 #[test]
-fn generate_agents_md_creates_files() {
+fn generate_claude_config_creates_files() {
     let tmp = TempDir::new().unwrap();
     let ws_dir = tmp.path().join("my-feature");
     fs::create_dir(&ws_dir).unwrap();
@@ -198,4 +198,14 @@ fn generate_agents_md_creates_files() {
     // Symlink should resolve to same content
     let claude_content = fs::read_to_string(&claude_path).unwrap();
     assert_eq!(content, claude_content);
+
+    // .claude/settings.local.json should list repo directories
+    let settings_path = ws_dir.join(".claude/settings.local.json");
+    assert!(settings_path.exists());
+    let settings: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&settings_path).unwrap()).unwrap();
+    let dirs = settings["additionalDirectories"].as_array().unwrap();
+    assert_eq!(dirs.len(), 2);
+    assert!(dirs[0].as_str().unwrap().ends_with("/repo-a"));
+    assert!(dirs[1].as_str().unwrap().ends_with("/repo-b"));
 }

@@ -16,9 +16,9 @@ pub struct Config {
     pub workspace_dir: PathBuf,
     #[serde(default)]
     pub templates: BTreeMap<String, Template>,
-    /// Generate AGENTS.md (+ CLAUDE.md symlink) in new workspaces.
+    /// Generate Claude config (AGENTS.md, CLAUDE.md symlink, .claude/settings.local.json) in new workspaces.
     #[serde(default = "default_true")]
-    pub generate_agents_md: bool,
+    pub generate_claude_config: bool,
 }
 
 fn default_true() -> bool {
@@ -32,7 +32,7 @@ impl Default for Config {
                 .expect("could not determine home directory")
                 .join("workspaces"),
             templates: BTreeMap::new(),
-            generate_agents_md: true,
+            generate_claude_config: true,
         }
     }
 }

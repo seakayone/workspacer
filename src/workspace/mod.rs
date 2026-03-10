@@ -76,12 +76,63 @@ pub fn create(config: &Config, name: &str, template: &Template) -> Result<PathBu
         }
     }
 
-    if config.generate_agents_md {
+    if config.generate_claude_config {
         agents::generate(&ws_dir, name, template)?;
     }
 
     eprintln!("Created workspace: {}", ws_dir.display());
     Ok(ws_dir)
+}
+
+/// Detect the current workspace name from a directory path.
+/// Returns the workspace name if the path is inside the workspace_dir.
+pub fn detect_workspace(config: &Config, cwd: &std::path::Path) -> Result<String> {
+    let ws_root = workspace_dir(config);
+    let relative = cwd
+        .strip_prefix(&ws_root)
+        .with_context(|| format!("current directory is not inside workspace dir {}", ws_root.display()))?;
+    let name = relative
+        .components()
+        .next()
+        .and_then(|c| c.as_os_str().to_str())
+        .with_context(|| "could not determine workspace name from current directory")?;
+    Ok(name.to_string())
+}
+
+pub fn add_repo(config: &Config, name: &str, repo: &std::path::Path) -> Result<()> {
+    let branch = branch_name(name);
+    let repo = repo.canonicalize().unwrap_or_else(|_| repo.to_path_buf());
+
+    eprintln!("Adding worktree for {} to workspace {name} ...", repo.display());
+    let status = wt_command(config, name)
+        .args(["switch", "--create", "--no-cd", &branch])
+        .arg("-C")
+        .arg(&repo)
+        .status()
+        .with_context(|| {
+            format!(
+                "failed to run `wt switch --create {}` in {}",
+                branch,
+                repo.display()
+            )
+        })?;
+
+    if !status.success() {
+        anyhow::bail!(
+            "wt switch --create {} failed in {} (exit code: {:?})",
+            branch,
+            repo.display(),
+            status.code()
+        );
+    }
+
+    if config.generate_claude_config {
+        let ws_dir = workspace_dir(config).join(name);
+        agents::add_repo(&ws_dir, &repo)?;
+    }
+
+    eprintln!("Added {} to workspace {name}", repo.display());
+    Ok(())
 }
 
 pub fn remove(config: &Config, name: &str, template: &Template) -> Result<()> {
