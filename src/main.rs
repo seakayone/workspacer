@@ -33,7 +33,14 @@ fn main() -> Result<()> {
                 Some(n) => n,
                 None => {
                     let workspaces = workspace::list(&config)?;
-                    match tui::pick_workspace(workspaces)? {
+                    let entries: Vec<tui::WorkspaceEntry> = workspaces
+                        .iter()
+                        .map(|ws| tui::WorkspaceEntry {
+                            name: ws.clone(),
+                            marker: workspace::agent_marker(&config, ws).unwrap_or_default(),
+                        })
+                        .collect();
+                    match tui::pick_workspace(entries)? {
                         Some(picked) => picked,
                         None => {
                             eprintln!("No workspace selected.");
@@ -54,11 +61,17 @@ fn main() -> Result<()> {
             if workspaces.is_empty() {
                 println!("No workspaces found.");
             } else {
-                println!("{:<20} {}", "WORKSPACE", "AGENT");
+                let name_width = workspaces
+                    .iter()
+                    .map(|ws| ws.len())
+                    .max()
+                    .unwrap_or(0)
+                    .max("WORKSPACE".len());
+                println!("{:<width$} {}", "WORKSPACE", "AGENT", width = name_width);
                 for ws in &workspaces {
                     let marker = workspace::agent_marker(&config, ws)
                         .unwrap_or_default();
-                    println!("{:<20} {}", ws, marker);
+                    println!("{:<width$} {}", ws, marker, width = name_width);
                 }
             }
         }
