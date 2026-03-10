@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
 use anyhow::Result;
-use crossterm::cursor::{MoveToColumn, MoveUp};
+use crossterm::cursor::{Hide, MoveToColumn, MoveUp, Show};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use crossterm::style::{Attribute, Print, SetAttribute};
 use crossterm::terminal::{self, ClearType};
@@ -40,15 +40,12 @@ pub fn pick_workspace(items: Vec<WorkspaceEntry>) -> Result<Option<String>> {
 
     // Print header (not part of selectable items)
     let mut stderr = io::stderr();
-    execute!(
-        stderr,
-        Print(&header),
-        Print("\n"),
-    )?;
+    execute!(stderr, Hide, Print(&header), Print("\n"))?;
 
     terminal::enable_raw_mode()?;
     let result = run_inline_picker(&display_items, &names);
     terminal::disable_raw_mode()?;
+    execute!(stderr, Show)?;
 
     // Clear the picker output and header
     let total_lines = display_items.len() + 1; // +1 for header
@@ -70,27 +67,30 @@ pub fn pick_workspace(items: Vec<WorkspaceEntry>) -> Result<Option<String>> {
 
 fn render(items: &[String], selected: usize, first: bool) -> Result<()> {
     let mut stderr = io::stderr();
+    let (cols, _) = terminal::size().unwrap_or((80, 24));
+    let width = cols as usize;
 
     // Move cursor back up to overwrite previous render (skip on first draw)
-    if !first && items.len() > 1 {
-        queue!(stderr, MoveUp(items.len() as u16 - 1))?;
+    if !first {
+        queue!(stderr, MoveUp(items.len() as u16))?;
     }
 
-    for (i, item) in items.iter().enumerate() {
+    for (_i, item) in items.iter().enumerate() {
         queue!(stderr, MoveToColumn(0), terminal::Clear(ClearType::CurrentLine))?;
-        if i == selected {
+        if _i == selected {
+            let text = format!(" > {item}");
+            // Pad to terminal width - 1 to avoid line wrap
+            let padded = format!("{:<width$}", text, width = width.saturating_sub(1));
             queue!(
                 stderr,
                 SetAttribute(Attribute::Reverse),
-                Print(format!(" > {item} ")),
+                Print(padded),
                 SetAttribute(Attribute::Reset),
             )?;
         } else {
             queue!(stderr, Print(format!("   {item}")))?;
         }
-        if i < items.len() - 1 {
-            queue!(stderr, Print("\n"))?;
-        }
+        queue!(stderr, Print("\n"))?;
     }
 
     stderr.flush()?;
@@ -112,10 +112,10 @@ fn run_inline_picker(display_items: &[String], names: &[String]) -> Result<Optio
                 KeyCode::Char('q') | KeyCode::Esc => return Ok(None),
                 KeyCode::Enter => return Ok(Some(names[selected].clone())),
                 KeyCode::Down | KeyCode::Char('j') => {
-                    selected = (selected + 1).min(display_items.len() - 1);
+                    selected = (selected + 1) % display_items.len();
                 }
                 KeyCode::Up | KeyCode::Char('k') => {
-                    selected = selected.saturating_sub(1);
+                    selected = selected.checked_sub(1).unwrap_or(display_items.len() - 1);
                 }
                 KeyCode::Char('h') | KeyCode::Home => {
                     selected = 0;
@@ -152,7 +152,7 @@ mod tests {
         let result = entry.display(20);
         assert!(result.starts_with("my-ws"));
         assert!(result.ends_with("\u{1F916}"));
-        // Name should be padded to width 20
+        // Name padded to width 20 + space + emoji
         assert_eq!(result.len(), 20 + 1 + "\u{1F916}".len());
     }
 
