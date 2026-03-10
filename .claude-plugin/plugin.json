@@ -1,0 +1,9 @@
+{
+  "name": "workspacer",
+  "description": "Workspacer manages related git worktrees in workspaces. This plugin provides automatic agent activity tracking (🤖/💬 indicators in `ws list` showing active Claude sessions).",
+  "version": "1.0.0",
+  "author": {
+    "name": "workspacer"
+  },
+  "hooks": "./.claude-plugin/hooks/hooks.json"
+}

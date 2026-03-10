@@ -96,3 +96,29 @@ Config is stored at `~/.config/workspacer/config.json`.
 |-----------------|------------------|----------------------------------------------|
 | `workspace_dir` | `~/workspaces`   | Directory where workspaces are created       |
 | `templates`     | `{}`             | Named sets of repo paths for worktree creation |
+
+### Claude Code plugin
+
+Workspacer ships with a Claude Code plugin that tracks agent activity per workspace.
+When active, `ws list` shows 🤖 (working) or 💬 (waiting for input) next to each workspace.
+
+Install the plugin for development/testing:
+
+```sh
+claude --plugin-dir /path/to/workspacer
+```
+
+The plugin uses Claude Code hooks to automatically set and clear the agent state:
+
+| Event               | Marker |
+|---------------------|--------|
+| `UserPromptSubmit`  | 🤖     |
+| `Notification`      | 💬     |
+| `SessionEnd`        | (cleared) |
+
+You can also manage the agent state manually:
+
+```sh
+ws agent set 🤖    # Set marker (detects workspace from cwd)
+ws agent clear     # Clear marker
+```

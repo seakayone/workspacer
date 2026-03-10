@@ -62,6 +62,10 @@ pub enum Commands {
         kind: String,
     },
 
+    /// Manage agent state for a workspace
+    #[command(subcommand)]
+    Agent(AgentCommands),
+
     /// Show or update configuration
     Config {
         /// Set the workspace directory
@@ -106,4 +110,16 @@ pub enum TemplateCommands {
         /// Template name
         name: String,
     },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum AgentCommands {
+    /// Set the agent state marker (e.g. 🤖 or 💬)
+    Set {
+        /// The marker to display (e.g. 🤖)
+        marker: String,
+    },
+
+    /// Clear the agent state marker
+    Clear,
 }

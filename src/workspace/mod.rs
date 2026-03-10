@@ -135,6 +135,40 @@ pub fn add_repo(config: &Config, name: &str, repo: &std::path::Path) -> Result<(
     Ok(())
 }
 
+const AGENT_MARKER_FILE: &str = "agent-marker";
+const CONFIG_DIR: &str = ".config/workspacer";
+
+fn agent_marker_path(config: &Config, name: &str) -> PathBuf {
+    workspace_dir(config).join(name).join(CONFIG_DIR).join(AGENT_MARKER_FILE)
+}
+
+/// Read the agent state marker for a workspace, if any.
+pub fn agent_marker(config: &Config, name: &str) -> Option<String> {
+    fs::read_to_string(agent_marker_path(config, name))
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
+/// Set the agent state marker for a workspace.
+pub fn set_agent_marker(config: &Config, name: &str, marker: &str) -> Result<()> {
+    let path = agent_marker_path(config, name);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("failed to create {}", parent.display()))?;
+    }
+    fs::write(&path, marker).with_context(|| format!("failed to write {}", path.display()))
+}
+
+/// Clear the agent state marker for a workspace.
+pub fn clear_agent_marker(config: &Config, name: &str) -> Result<()> {
+    let path = agent_marker_path(config, name);
+    if path.exists() {
+        fs::remove_file(&path).with_context(|| format!("failed to remove {}", path.display()))?;
+    }
+    Ok(())
+}
+
 pub fn remove(config: &Config, name: &str, template: &Template) -> Result<()> {
     let branch = branch_name(name);
     for repo in &template.repos {

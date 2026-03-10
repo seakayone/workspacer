@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 
-use workspacer::cli::{Cli, Commands, TemplateCommands};
+use workspacer::cli::{AgentCommands, Cli, Commands, TemplateCommands};
 use workspacer::config::{Config, Template};
 use workspacer::{tui, workspace};
 
@@ -47,8 +47,11 @@ fn main() -> Result<()> {
             if workspaces.is_empty() {
                 println!("No workspaces found.");
             } else {
-                for ws in workspaces {
-                    println!("  {ws}");
+                println!("{:<20} {}", "WORKSPACE", "AGENT");
+                for ws in &workspaces {
+                    let marker = workspace::agent_marker(&config, ws)
+                        .unwrap_or_default();
+                    println!("{:<20} {}", ws, marker);
                 }
             }
         }
@@ -64,6 +67,18 @@ fn main() -> Result<()> {
             eprintln!("Using template: {tmpl_name}");
             let tmpl = tmpl.clone();
             workspace::remove(&config, &name, &tmpl)?;
+        }
+        Commands::Agent(cmd) => {
+            let cwd = std::env::current_dir().context("failed to get current directory")?;
+            let ws_name = workspace::detect_workspace(&config, &cwd)?;
+            match cmd {
+                AgentCommands::Set { marker } => {
+                    workspace::set_agent_marker(&config, &ws_name, &marker)?;
+                }
+                AgentCommands::Clear => {
+                    workspace::clear_agent_marker(&config, &ws_name)?;
+                }
+            }
         }
         Commands::Template(cmd) => handle_template(&mut config, cmd)?,
         Commands::ShellInit => {
