@@ -1,9 +1,45 @@
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+use clap::builder::styling::{AnsiColor, Color, Styles};
+use clap::{ColorChoice, Parser, Subcommand};
+
+fn help_styles() -> Styles {
+    Styles::styled()
+        .header(
+            anstyle::Style::new()
+                .bold()
+                .fg_color(Some(Color::Ansi(AnsiColor::Green))),
+        )
+        .usage(
+            anstyle::Style::new()
+                .bold()
+                .fg_color(Some(Color::Ansi(AnsiColor::Green))),
+        )
+        .literal(
+            anstyle::Style::new()
+                .bold()
+                .fg_color(Some(Color::Ansi(AnsiColor::Cyan))),
+        )
+        .placeholder(anstyle::Style::new().fg_color(Some(Color::Ansi(AnsiColor::Cyan))))
+        .error(
+            anstyle::Style::new()
+                .bold()
+                .fg_color(Some(Color::Ansi(AnsiColor::Red))),
+        )
+        .valid(
+            anstyle::Style::new()
+                .bold()
+                .fg_color(Some(Color::Ansi(AnsiColor::Green))),
+        )
+        .invalid(
+            anstyle::Style::new()
+                .bold()
+                .fg_color(Some(Color::Ansi(AnsiColor::Yellow))),
+        )
+}
 
 #[derive(Debug, Parser)]
-#[command(name = "ws", about = "Manage related git worktrees in a workspace")]
+#[command(name = "ws", about = "Manage related git worktrees in a workspace", color = ColorChoice::Always, styles = help_styles())]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,

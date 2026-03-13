@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use clap::Parser;
+use crossterm::style::{Attribute, SetAttribute};
 
 use workspacer::cli::{AgentCommands, Cli, Commands, RepoCommands, TemplateCommands};
 use workspacer::config::{Config, Template};
@@ -67,11 +68,25 @@ fn main() -> Result<()> {
                     .max()
                     .unwrap_or(0)
                     .max("WORKSPACE".len());
-                println!("{:<width$} {}", "WORKSPACE", "AGENT", width = name_width);
+                println!(
+                    "{bold}{:<width$} {}{reset}",
+                    "WORKSPACE",
+                    "AGENT",
+                    width = name_width,
+                    bold = SetAttribute(Attribute::Bold),
+                    reset = SetAttribute(Attribute::Reset),
+                );
                 for ws in &workspaces {
                     let marker = workspace::agent_marker(&config, ws)
                         .unwrap_or_default();
-                    println!("{:<width$} {}", ws, marker, width = name_width);
+                    println!(
+                        "{dim}{:<width$} {}{reset}",
+                        ws,
+                        marker,
+                        width = name_width,
+                        dim = SetAttribute(Attribute::Dim),
+                        reset = SetAttribute(Attribute::Reset),
+                    );
                 }
             }
         }
