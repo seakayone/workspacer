@@ -1,7 +1,7 @@
 ws() {
     if [ "$1" = "switch" ]; then
         local dir
-        dir="$(command ws "$@")"
+        dir="$(WS_SHELL=1 command ws "$@")"
         if [ $? -eq 0 ] && [ -n "$dir" ] && [ -d "$dir" ]; then
             cd "$dir" || return 1
         else

@@ -54,6 +54,12 @@ fn main() -> Result<()> {
             if !dir.exists() {
                 anyhow::bail!("workspace '{}' does not exist", target);
             }
+            if std::env::var_os("WS_SHELL").is_none() {
+                eprintln!(
+                    "hint: shell integration not detected. Add this to your shell config:\n\n  \
+                     eval \"$(ws shell-init)\"\n"
+                );
+            }
             // Print path to stdout so the shell wrapper can cd to it.
             println!("{}", dir.display());
         }

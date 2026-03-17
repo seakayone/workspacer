@@ -29,6 +29,17 @@ cargo install --git https://github.com/seakayone/workspacer
 
 This installs the `ws` binary into your Cargo bin directory (usually `~/.cargo/bin/`).
 
+## Releasing
+
+```sh
+# Bump version in Cargo.toml, then:
+git commit -am "Release vX.Y.Z"
+git tag vX.Y.Z
+git push origin main --tags
+```
+
+CI automatically builds binaries for macOS (ARM + Intel) and Linux, creates a GitHub Release, and updates the [Homebrew tap](https://github.com/seakayone/homebrew-tap).
+
 During development you can also run it via:
 
 ```sh
