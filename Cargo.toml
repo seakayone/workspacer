@@ -3,6 +3,9 @@ name = "workspacer"
 version = "0.1.0"
 edition = "2024"
 license = "Apache-2.0"
+description = "CLI tool for managing related git worktrees in a workspace"
+homepage = "https://github.com/seakayone/workspacer"
+repository = "https://github.com/seakayone/workspacer"
 
 [[bin]]
 name = "ws"

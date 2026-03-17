@@ -9,6 +9,12 @@ Uses [worktrunk](https://github.com/max-sixty/worktrunk) (`wt`) to create and ma
 
 ## Installation
 
+### Homebrew (macOS / Linux)
+
+```sh
+brew install seakayone/tap/workspacer
+```
+
 ### From source
 
 ```sh
@@ -18,7 +24,7 @@ cargo install --path .
 ### From GitHub
 
 ```sh
-cargo install --git https://github.com/dasch-swiss/workspacer
+cargo install --git https://github.com/seakayone/workspacer
 ```
 
 This installs the `ws` binary into your Cargo bin directory (usually `~/.cargo/bin/`).

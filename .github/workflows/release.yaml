@@ -1,0 +1,143 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-apple-darwin
+            runner: macos-13
+          - target: aarch64-apple-darwin
+            runner: macos-latest
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ARCHIVE="workspacer-v${VERSION}-${{ matrix.target }}.tar.gz"
+          tar -czf "$ARCHIVE" -C "target/${{ matrix.target }}/release" ws
+          echo "ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspacer-${{ matrix.target }}
+          path: ${{ env.ARCHIVE }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" artifacts/*.tar.gz --generate-notes
+
+  update-tap:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Compute checksums
+        run: |
+          cd artifacts
+          for f in *.tar.gz; do
+            sha256sum "$f" >> checksums.txt
+          done
+          cat checksums.txt
+
+      - name: Update Homebrew formula
+        env:
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${GITHUB_REF_NAME#v}"
+          BASE_URL="https://github.com/seakayone/workspacer/releases/download/${GITHUB_REF_NAME}"
+
+          sha_aarch64_apple=$(grep "aarch64-apple-darwin" artifacts/checksums.txt | awk '{print $1}')
+          sha_x86_64_apple=$(grep "x86_64-apple-darwin" artifacts/checksums.txt | awk '{print $1}')
+          sha_x86_64_linux=$(grep "x86_64-unknown-linux-gnu" artifacts/checksums.txt | awk '{print $1}')
+
+          cat > formula.rb <<FORMULA
+          class Workspacer < Formula
+            desc "CLI tool for managing related git worktrees in a workspace"
+            homepage "https://github.com/seakayone/workspacer"
+            license "Apache-2.0"
+            version "${VERSION}"
+
+            on_macos do
+              if Hardware::CPU.arm?
+                url "${BASE_URL}/workspacer-v${VERSION}-aarch64-apple-darwin.tar.gz"
+                sha256 "${sha_aarch64_apple}"
+              else
+                url "${BASE_URL}/workspacer-v${VERSION}-x86_64-apple-darwin.tar.gz"
+                sha256 "${sha_x86_64_apple}"
+              end
+            end
+
+            on_linux do
+              url "${BASE_URL}/workspacer-v${VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+              sha256 "${sha_x86_64_linux}"
+            end
+
+            def install
+              bin.install "ws"
+            end
+
+            test do
+              assert_match "ws", shell_output("#{bin}/ws --help")
+            end
+          end
+          FORMULA
+
+          # Remove leading whitespace from heredoc
+          sed -i 's/^          //' formula.rb
+
+          git clone "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/seakayone/homebrew-tap.git" tap
+          mkdir -p tap/Formula
+          cp formula.rb tap/Formula/workspacer.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/workspacer.rb
+          git commit -m "Update workspacer to ${VERSION}"
+          git push
