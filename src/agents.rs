@@ -78,8 +78,8 @@ fn generate_claude_settings(workspace_dir: &Path, template: &Template) -> Result
         additional_directories: repo_directories(workspace_dir, template),
     };
 
-    let contents = serde_json::to_string_pretty(&settings)
-        .context("failed to serialize Claude settings")?;
+    let contents =
+        serde_json::to_string_pretty(&settings).context("failed to serialize Claude settings")?;
     fs::write(&settings_path, contents)
         .with_context(|| format!("failed to write {}", settings_path.display()))?;
 
@@ -166,8 +166,8 @@ fn remove_repo_from_claude_settings(workspace_dir: &Path, repo_name: &str) -> Re
     let repo_dir = workspace_dir.join(repo_name);
     settings.additional_directories.retain(|d| d != &repo_dir);
 
-    let contents = serde_json::to_string_pretty(&settings)
-        .context("failed to serialize Claude settings")?;
+    let contents =
+        serde_json::to_string_pretty(&settings).context("failed to serialize Claude settings")?;
     fs::write(&settings_path, contents)
         .with_context(|| format!("failed to write {}", settings_path.display()))?;
 

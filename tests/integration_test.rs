@@ -324,7 +324,10 @@ fn remove_repo_updates_claude_settings() {
     let settings_path = ws_dir.join(".claude/settings.local.json");
     let settings: serde_json::Value =
         serde_json::from_str(&fs::read_to_string(&settings_path).unwrap()).unwrap();
-    assert_eq!(settings["additionalDirectories"].as_array().unwrap().len(), 2);
+    assert_eq!(
+        settings["additionalDirectories"].as_array().unwrap().len(),
+        2
+    );
 
     // Remove repo-a
     agents::remove_repo(&ws_dir, "repo-a").unwrap();

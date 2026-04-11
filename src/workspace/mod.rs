@@ -21,16 +21,13 @@ pub fn list(config: &Config) -> Result<Vec<String>> {
         return Ok(vec![]);
     }
     let mut workspaces = Vec::new();
-    for entry in
-        fs::read_dir(&dir).with_context(|| format!("failed to read {}", dir.display()))?
-    {
+    for entry in fs::read_dir(&dir).with_context(|| format!("failed to read {}", dir.display()))? {
         let entry = entry?;
-        if entry.file_type()?.is_dir() {
-            if let Some(name) = entry.file_name().to_str() {
-                if !name.starts_with('.') {
-                    workspaces.push(name.to_string());
-                }
-            }
+        if entry.file_type()?.is_dir()
+            && let Some(name) = entry.file_name().to_str()
+            && !name.starts_with('.')
+        {
+            workspaces.push(name.to_string());
         }
     }
     workspaces.sort();
@@ -39,11 +36,10 @@ pub fn list(config: &Config) -> Result<Vec<String>> {
 
 fn wt_command(config: &Config, workspace: &str) -> Command {
     let mut cmd = Command::new("wt");
-    cmd.env("WORKTRUNK_DIRECTIVE_FILE", "/dev/null")
-        .env(
-            "WORKTRUNK_WORKTREE_PATH",
-            config.worktree_path_template(workspace),
-        );
+    cmd.env("WORKTRUNK_DIRECTIVE_FILE", "/dev/null").env(
+        "WORKTRUNK_WORKTREE_PATH",
+        config.worktree_path_template(workspace),
+    );
     cmd
 }
 
@@ -88,9 +84,12 @@ pub fn create(config: &Config, name: &str, template: &Template) -> Result<PathBu
 /// Returns the workspace name if the path is inside the workspace_dir.
 pub fn detect_workspace(config: &Config, cwd: &std::path::Path) -> Result<String> {
     let ws_root = workspace_dir(config);
-    let relative = cwd
-        .strip_prefix(&ws_root)
-        .with_context(|| format!("current directory is not inside workspace dir {}", ws_root.display()))?;
+    let relative = cwd.strip_prefix(&ws_root).with_context(|| {
+        format!(
+            "current directory is not inside workspace dir {}",
+            ws_root.display()
+        )
+    })?;
     let name = relative
         .components()
         .next()
@@ -103,7 +102,10 @@ pub fn add_repo(config: &Config, name: &str, repo: &std::path::Path) -> Result<(
     let branch = branch_name(name);
     let repo = repo.canonicalize().unwrap_or_else(|_| repo.to_path_buf());
 
-    eprintln!("Adding worktree for {} to workspace {name} ...", repo.display());
+    eprintln!(
+        "Adding worktree for {} to workspace {name} ...",
+        repo.display()
+    );
     let status = wt_command(config, name)
         .args(["switch", "--create", "--no-cd", &branch])
         .arg("-C")
@@ -146,12 +148,11 @@ pub fn list_repos(config: &Config, workspace: &str) -> Result<Vec<String>> {
         fs::read_dir(&ws_dir).with_context(|| format!("failed to read {}", ws_dir.display()))?
     {
         let entry = entry?;
-        if entry.file_type()?.is_dir() {
-            if let Some(name) = entry.file_name().to_str() {
-                if !name.starts_with('.') {
-                    repos.push(name.to_string());
-                }
-            }
+        if entry.file_type()?.is_dir()
+            && let Some(name) = entry.file_name().to_str()
+            && !name.starts_with('.')
+        {
+            repos.push(name.to_string());
         }
     }
     repos.sort();
@@ -213,7 +214,10 @@ const AGENT_MARKER_FILE: &str = "agent-marker";
 const CONFIG_DIR: &str = ".config/workspacer";
 
 fn agent_marker_path(config: &Config, name: &str) -> PathBuf {
-    workspace_dir(config).join(name).join(CONFIG_DIR).join(AGENT_MARKER_FILE)
+    workspace_dir(config)
+        .join(name)
+        .join(CONFIG_DIR)
+        .join(AGENT_MARKER_FILE)
 }
 
 /// Read the agent state marker for a workspace, if any.
@@ -253,11 +257,7 @@ pub fn remove(config: &Config, name: &str, template: &Template) -> Result<()> {
             .arg(repo)
             .status()
             .with_context(|| {
-                format!(
-                    "failed to run `wt remove {}` in {}",
-                    branch,
-                    repo.display()
-                )
+                format!("failed to run `wt remove {}` in {}", branch, repo.display())
             })?;
 
         if !status.success() {

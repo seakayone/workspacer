@@ -75,16 +75,14 @@ fn main() -> Result<()> {
                     .unwrap_or(0)
                     .max("WORKSPACE".len());
                 println!(
-                    "{bold}{:<width$} {}{reset}",
+                    "{bold}{:<width$} AGENT{reset}",
                     "WORKSPACE",
-                    "AGENT",
                     width = name_width,
                     bold = SetAttribute(Attribute::Bold),
                     reset = SetAttribute(Attribute::Reset),
                 );
                 for ws in &workspaces {
-                    let marker = workspace::agent_marker(&config, ws)
-                        .unwrap_or_default();
+                    let marker = workspace::agent_marker(&config, ws).unwrap_or_default();
                     println!(
                         "{dim}{:<width$} {}{reset}",
                         ws,

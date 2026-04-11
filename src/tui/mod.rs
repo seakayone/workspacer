@@ -183,7 +183,7 @@ fn run_inline_picker(
                         .modifiers
                         .contains(crossterm::event::KeyModifiers::CONTROL) =>
                 {
-                    return Ok(None)
+                    return Ok(None);
                 }
                 KeyCode::Esc => return Ok(None),
                 KeyCode::Enter => {
@@ -196,8 +196,7 @@ fn run_inline_picker(
                 }
                 KeyCode::Up => {
                     if !filtered.is_empty() {
-                        selected =
-                            selected.checked_sub(1).unwrap_or(filtered.len() - 1);
+                        selected = selected.checked_sub(1).unwrap_or(filtered.len() - 1);
                     }
                 }
                 KeyCode::Backspace => {
@@ -212,8 +211,14 @@ fn run_inline_picker(
                 }
                 _ => continue,
             }
-            let prev =
-                render(header, &filter, display_items, &filtered, selected, *last_rendered_lines)?;
+            let prev = render(
+                header,
+                &filter,
+                display_items,
+                &filtered,
+                selected,
+                *last_rendered_lines,
+            )?;
             *last_rendered_lines = prev;
         }
     }
@@ -266,7 +271,7 @@ mod tests {
 
     #[test]
     fn display_entries_align_columns() {
-        let entries = vec![
+        let entries = [
             WorkspaceEntry {
                 name: "short".into(),
                 marker: "\u{1F916}".into(),

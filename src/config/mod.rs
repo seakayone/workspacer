@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Template {
     pub repos: Vec<PathBuf>,
@@ -84,7 +83,10 @@ impl Config {
         format!("{dir}/{workspace}/{{{{ repo }}}}")
     }
 
-    pub fn resolve_template<'a>(&'a self, name: Option<&'a str>) -> Result<(&'a str, &'a Template)> {
+    pub fn resolve_template<'a>(
+        &'a self,
+        name: Option<&'a str>,
+    ) -> Result<(&'a str, &'a Template)> {
         match name {
             Some(n) => {
                 let tmpl = self
@@ -98,11 +100,17 @@ impl Config {
                     let (k, v) = self.templates.iter().next().unwrap();
                     Ok((k.as_str(), v))
                 } else if self.templates.is_empty() {
-                    anyhow::bail!("no templates configured. Add one with:\n  ws template add <name> --repo /path/to/repo");
+                    anyhow::bail!(
+                        "no templates configured. Add one with:\n  ws template add <name> --repo /path/to/repo"
+                    );
                 } else {
                     anyhow::bail!(
                         "multiple templates exist, specify one with --template: {}",
-                        self.templates.keys().cloned().collect::<Vec<_>>().join(", ")
+                        self.templates
+                            .keys()
+                            .cloned()
+                            .collect::<Vec<_>>()
+                            .join(", ")
                     );
                 }
             }
