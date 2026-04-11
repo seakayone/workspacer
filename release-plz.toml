@@ -2,3 +2,5 @@
 # This is a binary tool, not published to crates.io.
 # Use git tags (not the cargo registry) to determine the current version.
 git_only = true
+# Disable cargo publish; git_only does not imply publish=false in the release command.
+publish = false
