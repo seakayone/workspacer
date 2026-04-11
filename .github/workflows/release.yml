@@ -4,12 +4,18 @@ on:
   release:
     types: [created]  # triggered when release-plz creates the GitHub release
   workflow_dispatch:   # allow manual trigger and trigger from release-plz workflow
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v0.2.0)'
+        required: true
 
 permissions:
   contents: write
 
 env:
   CARGO_TERM_COLOR: always
+  # Use the input tag for workflow_dispatch, otherwise fall back to GITHUB_REF_NAME
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
   build:
@@ -25,6 +31,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_TAG }}
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -39,7 +47,7 @@ jobs:
 
       - name: Package
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${RELEASE_TAG#v}"
           ARCHIVE="workspacer-v${VERSION}-${{ matrix.target }}.tar.gz"
           tar -czf "$ARCHIVE" -C "target/${{ matrix.target }}/release" ws
           echo "ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
@@ -65,7 +73,7 @@ jobs:
       - name: Upload binaries to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$GITHUB_REF_NAME" artifacts/*.tar.gz
+        run: gh release upload "$RELEASE_TAG" artifacts/*.tar.gz
 
   update-tap:
     needs: release
@@ -91,8 +99,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          VERSION="${GITHUB_REF_NAME#v}"
-          BASE_URL="https://github.com/seakayone/workspacer/releases/download/${GITHUB_REF_NAME}"
+          VERSION="${RELEASE_TAG#v}"
+          BASE_URL="https://github.com/seakayone/workspacer/releases/download/${RELEASE_TAG}"
 
           sha_aarch64_apple=$(grep "aarch64-apple-darwin" artifacts/checksums.txt | awk '{print $1}')
           sha_x86_64_apple=$(grep "x86_64-apple-darwin" artifacts/checksums.txt | awk '{print $1}')

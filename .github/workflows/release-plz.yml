@@ -38,7 +38,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG=$(echo '${{ steps.release-plz.outputs.releases }}' | jq -r '.[0].tag')
-          gh workflow run release.yml --ref "$TAG"
+          gh workflow run release.yml --ref main --field tag="$TAG"
 
   # Opens (or updates) the Release PR with the version bump and CHANGELOG.
   release-plz-pr:
