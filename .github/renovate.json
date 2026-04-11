@@ -3,7 +3,7 @@
   "extends": [
     "config:recommended"
   ],
-  "schedule": ["every monday"],
+  "schedule": ["on monday"],
   "packageRules": [
     {
       "description": "Group all Cargo patch and minor updates into one PR",
