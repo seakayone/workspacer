@@ -3,6 +3,7 @@ name: Release
 on:
   release:
     types: [created]  # triggered when release-plz creates the GitHub release
+  workflow_dispatch:   # allow manual trigger and trigger from release-plz workflow
 
 permissions:
   contents: write

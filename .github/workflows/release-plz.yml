@@ -25,11 +25,20 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Run release-plz
+        id: release-plz
         uses: release-plz/action@v0.5
         with:
           command: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger Release workflow
+        if: steps.release-plz.outputs.releases_created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG=$(echo '${{ steps.release-plz.outputs.releases }}' | jq -r '.[0].tag')
+          gh workflow run release.yml --ref "$TAG"
 
   # Opens (or updates) the Release PR with the version bump and CHANGELOG.
   release-plz-pr:
