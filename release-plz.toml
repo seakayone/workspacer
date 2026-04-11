@@ -1,0 +1,3 @@
+[workspace]
+# Do not publish to crates.io — this is a binary tool, not a library.
+publish = false
