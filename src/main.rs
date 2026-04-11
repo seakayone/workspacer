@@ -3,8 +3,8 @@ use clap::Parser;
 use crossterm::style::{Attribute, SetAttribute};
 
 use workspacer::cli::{AgentCommands, Cli, Commands, RepoCommands, TemplateCommands};
-use workspacer::version;
 use workspacer::config::{Config, Template};
+use workspacer::version;
 use workspacer::{tui, workspace};
 
 fn main() -> Result<()> {
