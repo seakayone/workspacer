@@ -6,15 +6,14 @@ fn main() {
     println!("cargo:rerun-if-changed=.git/refs/tags");
     println!("cargo:rerun-if-changed=.git/packed-refs");
 
-    let cargo_version = std::env::var("CARGO_PKG_VERSION").unwrap();
-    let version = build_version(&cargo_version);
-
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let dest = std::path::Path::new(&out_dir).join("version.txt");
+    let version = build_version();
     std::fs::write(dest, version).unwrap();
 }
 
-fn build_version(cargo_version: &str) -> String {
+fn build_version() -> String {
+    let cargo_version = std::env::var("CARGO_PKG_VERSION").unwrap();
     // If the current commit is exactly on a tag, use the plain semver.
     let on_tag = Command::new("git")
         .args(["describe", "--exact-match", "--tags"])
