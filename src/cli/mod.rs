@@ -100,6 +100,9 @@ pub enum Commands {
     #[command(subcommand)]
     Agent(AgentCommands),
 
+    /// Print the current version
+    Version,
+
     /// Show or update configuration
     Config {
         /// Set the workspace directory

@@ -3,6 +3,7 @@ use clap::Parser;
 use crossterm::style::{Attribute, SetAttribute};
 
 use workspacer::cli::{AgentCommands, Cli, Commands, RepoCommands, TemplateCommands};
+use workspacer::version;
 use workspacer::config::{Config, Template};
 use workspacer::{tui, workspace};
 
@@ -120,6 +121,9 @@ fn main() -> Result<()> {
             }
         }
         Commands::Template(cmd) => handle_template(&mut config, cmd)?,
+        Commands::Version => {
+            println!("{}", version());
+        }
         Commands::ShellInit => {
             print!("{}", include_str!("shell/init.sh"));
         }
