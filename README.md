@@ -29,23 +29,6 @@ cargo install --git https://github.com/seakayone/workspacer
 
 This installs the `ws` binary into your Cargo bin directory (usually `~/.cargo/bin/`).
 
-## Releasing
-
-```sh
-# Bump version in Cargo.toml, then:
-git commit -am "Release vX.Y.Z"
-git tag vX.Y.Z
-git push origin main --tags
-```
-
-CI automatically builds binaries for macOS (ARM + Intel) and Linux, creates a GitHub Release, and updates the [Homebrew tap](https://github.com/seakayone/homebrew-tap).
-
-During development you can also run it via:
-
-```sh
-cargo run -- <command>
-```
-
 ## Shell integration
 
 Add this to your `~/.zshrc` (or `~/.bashrc`) so that `ws switch` changes your shell's directory:
@@ -77,6 +60,7 @@ ws list                           # List all workspaces
 ws remove <name> [-t <template>]  # Remove worktrees via `wt remove` and clean up
 ws repo add <path>                # Add a repo worktree to the current workspace
 ws repo remove <name>             # Remove a repo worktree from the current workspace
+ws version                        # Print version information
 ```
 
 If only one template exists, it is used automatically. Otherwise pass `-t <template>`.
