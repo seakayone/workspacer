@@ -1,3 +1,4 @@
 [workspace]
-# Do not publish to crates.io — this is a binary tool, not a library.
-publish = false
+# This is a binary tool, not published to crates.io.
+# Use git tags (not the cargo registry) to determine the current version.
+git_only = true
