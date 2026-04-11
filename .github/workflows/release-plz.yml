@@ -14,6 +14,7 @@ jobs:
     permissions:
       contents: write       # push tags, create GitHub releases
       pull-requests: read   # detect the release PR and its commits
+      actions: write        # trigger the Release workflow via workflow_dispatch
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
