@@ -1,8 +1,8 @@
 name: Release
 
 on:
-  push:
-    tags: ["v*"]
+  release:
+    types: [created]  # triggered when release-plz creates the GitHub release
 
 permissions:
   contents: write
@@ -61,10 +61,10 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Create GitHub Release
+      - name: Upload binaries to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "$GITHUB_REF_NAME" artifacts/*.tar.gz --generate-notes
+        run: gh release upload "$GITHUB_REF_NAME" artifacts/*.tar.gz
 
   update-tap:
     needs: release
