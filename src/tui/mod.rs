@@ -42,8 +42,7 @@ pub fn pick_workspace(items: Vec<WorkspaceEntry>) -> Result<Option<String>> {
     execute!(stderr, Hide)?;
 
     terminal::enable_raw_mode()?;
-    let mut last_rendered_lines: u16 = 0;
-    let result = run_inline_picker(&display_items, &names, &header, &mut last_rendered_lines);
+    let (outcome, last_rendered_lines) = run_inline_picker(&display_items, &names, &header);
     terminal::disable_raw_mode()?;
     execute!(stderr, Show)?;
 
@@ -63,7 +62,7 @@ pub fn pick_workspace(items: Vec<WorkspaceEntry>) -> Result<Option<String>> {
         execute!(stderr, MoveUp(last_rendered_lines))?;
     }
 
-    result
+    outcome
 }
 
 fn render(
@@ -163,17 +162,20 @@ fn run_inline_picker(
     display_items: &[String],
     names: &[String],
     header: &str,
-    last_rendered_lines: &mut u16,
-) -> Result<Option<String>> {
+) -> (Result<Option<String>>, u16) {
     let mut selected: usize = 0;
     let mut filter = String::new();
     let mut filtered = filter_indices(names, &filter);
+    let mut rendered_lines: u16 = 0;
 
-    let prev = render(header, &filter, display_items, &filtered, selected, 0)?;
-    *last_rendered_lines = prev;
+    let prev = render(header, &filter, display_items, &filtered, selected, 0);
+    match prev {
+        Ok(lines) => rendered_lines = lines,
+        Err(e) => return (Err(e), rendered_lines),
+    }
 
     loop {
-        if let Event::Key(key) = event::read()? {
+        if let Ok(Event::Key(key)) = event::read() {
             if key.kind != KeyEventKind::Press {
                 continue;
             }
@@ -183,11 +185,14 @@ fn run_inline_picker(
                         .modifiers
                         .contains(crossterm::event::KeyModifiers::CONTROL) =>
                 {
-                    return Ok(None);
+                    return (Ok(None), rendered_lines);
                 }
-                KeyCode::Esc => return Ok(None),
+                KeyCode::Esc => return (Ok(None), rendered_lines),
                 KeyCode::Enter => {
-                    return Ok(filtered.get(selected).map(|&idx| names[idx].clone()));
+                    return (
+                        Ok(filtered.get(selected).map(|&idx| names[idx].clone())),
+                        rendered_lines,
+                    );
                 }
                 KeyCode::Down => {
                     if !filtered.is_empty() {
@@ -211,15 +216,17 @@ fn run_inline_picker(
                 }
                 _ => continue,
             }
-            let prev = render(
+            match render(
                 header,
                 &filter,
                 display_items,
                 &filtered,
                 selected,
-                *last_rendered_lines,
-            )?;
-            *last_rendered_lines = prev;
+                rendered_lines,
+            ) {
+                Ok(lines) => rendered_lines = lines,
+                Err(e) => return (Err(e), rendered_lines),
+            }
         }
     }
 }

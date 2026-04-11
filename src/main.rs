@@ -51,7 +51,7 @@ fn main() -> Result<()> {
                     }
                 }
             };
-            let dir = workspace::workspace_dir(&config).join(&target);
+            let dir = config.workspace_dir.join(&target);
             if !dir.exists() {
                 anyhow::bail!("workspace '{}' does not exist", target);
             }

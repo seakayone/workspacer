@@ -11,17 +11,13 @@ pub fn branch_name(workspace: &str) -> String {
     workspace.to_string()
 }
 
-pub fn workspace_dir(config: &Config) -> PathBuf {
-    config.workspace_dir.clone()
-}
-
 pub fn list(config: &Config) -> Result<Vec<String>> {
-    let dir = workspace_dir(config);
+    let dir = &config.workspace_dir;
     if !dir.exists() {
         return Ok(vec![]);
     }
     let mut workspaces = Vec::new();
-    for entry in fs::read_dir(&dir).with_context(|| format!("failed to read {}", dir.display()))? {
+    for entry in fs::read_dir(dir).with_context(|| format!("failed to read {}", dir.display()))? {
         let entry = entry?;
         if entry.file_type()?.is_dir()
             && let Some(name) = entry.file_name().to_str()
@@ -43,9 +39,9 @@ fn wt_command(config: &Config, workspace: &str) -> Command {
     cmd
 }
 
-pub fn create(config: &Config, name: &str, template: &Template) -> Result<PathBuf> {
+pub fn create(config: &Config, name: &str, template: &Template) -> Result<()> {
     let branch = branch_name(name);
-    let ws_dir = workspace_dir(config).join(name);
+    let ws_dir = config.workspace_dir.join(name);
 
     for repo in &template.repos {
         eprintln!("Creating worktree for {} ...", repo.display());
@@ -77,14 +73,14 @@ pub fn create(config: &Config, name: &str, template: &Template) -> Result<PathBu
     }
 
     eprintln!("Created workspace: {}", ws_dir.display());
-    Ok(ws_dir)
+    Ok(())
 }
 
 /// Detect the current workspace name from a directory path.
 /// Returns the workspace name if the path is inside the workspace_dir.
 pub fn detect_workspace(config: &Config, cwd: &std::path::Path) -> Result<String> {
-    let ws_root = workspace_dir(config);
-    let relative = cwd.strip_prefix(&ws_root).with_context(|| {
+    let ws_root = &config.workspace_dir;
+    let relative = cwd.strip_prefix(ws_root).with_context(|| {
         format!(
             "current directory is not inside workspace dir {}",
             ws_root.display()
@@ -129,8 +125,8 @@ pub fn add_repo(config: &Config, name: &str, repo: &std::path::Path) -> Result<(
     }
 
     if config.generate_claude_config {
-        let ws_dir = workspace_dir(config).join(name);
-        agents::add_repo(&ws_dir, &repo)?;
+        let ws_dir = config.workspace_dir.join(name);
+        agents::add_repo(&ws_dir, &repo)?
     }
 
     eprintln!("Added {} to workspace {name}", repo.display());
@@ -139,7 +135,7 @@ pub fn add_repo(config: &Config, name: &str, repo: &std::path::Path) -> Result<(
 
 /// List repo directories inside a workspace.
 pub fn list_repos(config: &Config, workspace: &str) -> Result<Vec<String>> {
-    let ws_dir = workspace_dir(config).join(workspace);
+    let ws_dir = config.workspace_dir.join(workspace);
     if !ws_dir.exists() {
         anyhow::bail!("workspace '{}' does not exist", workspace);
     }
@@ -162,7 +158,7 @@ pub fn list_repos(config: &Config, workspace: &str) -> Result<Vec<String>> {
 /// Remove a single repo worktree from a workspace.
 pub fn remove_repo(config: &Config, workspace: &str, repo_name: &str) -> Result<()> {
     let branch = branch_name(workspace);
-    let ws_dir = workspace_dir(config).join(workspace);
+    let ws_dir = config.workspace_dir.join(workspace);
     let repo_dir = ws_dir.join(repo_name);
 
     if !repo_dir.exists() {
@@ -214,7 +210,7 @@ const AGENT_MARKER_FILE: &str = "agent-marker";
 const CONFIG_DIR: &str = ".config/workspacer";
 
 fn agent_marker_path(config: &Config, name: &str) -> PathBuf {
-    workspace_dir(config)
+    config.workspace_dir
         .join(name)
         .join(CONFIG_DIR)
         .join(AGENT_MARKER_FILE)
@@ -270,7 +266,7 @@ pub fn remove(config: &Config, name: &str, template: &Template) -> Result<()> {
         }
     }
 
-    let dir = workspace_dir(config).join(name);
+    let dir = config.workspace_dir.join(name);
     if dir.exists() {
         fs::remove_dir_all(&dir)
             .with_context(|| format!("failed to remove workspace dir {}", dir.display()))?;
