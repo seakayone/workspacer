@@ -1,0 +1,30 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "schedule": ["every monday"],
+  "packageRules": [
+    {
+      "description": "Group all Cargo patch and minor updates into one PR",
+      "matchManagers": ["cargo"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "cargo non-major dependencies",
+      "automerge": false
+    },
+    {
+      "description": "Open individual PRs for Cargo major version bumps",
+      "matchManagers": ["cargo"],
+      "matchUpdateTypes": ["major"]
+    },
+    {
+      "description": "Group all GitHub Actions updates into one PR",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions dependencies",
+      "automerge": false
+    }
+  ],
+  "cargo": {
+    "rangeStrategy": "update-lockfile"
+  }
+}
