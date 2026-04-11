@@ -3,6 +3,7 @@
   "extends": [
     "config:recommended"
   ],
+  "mode": "full",
   "schedule": ["on monday"],
   "packageRules": [
     {
