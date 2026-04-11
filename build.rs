@@ -36,7 +36,18 @@ fn build_version(cargo_version: &str) -> String {
         .map(|s| s.trim().to_string());
 
     match sha {
-        Some(sha) => format!("{cargo_version}-dev+{sha}"),
+        Some(sha) => {
+            let dirty = Command::new("git")
+                .args(["status", "--porcelain"])
+                .output()
+                .ok()
+                .filter(|o| o.status.success())
+                .map(|o| !o.stdout.is_empty())
+                .unwrap_or(false);
+
+            let suffix = if dirty { "-dirty" } else { "" };
+            format!("{cargo_version}-dev+{sha}{suffix}")
+        }
         // git not available (e.g. a source tarball release) – fall back gracefully.
         None => cargo_version.to_string(),
     }
